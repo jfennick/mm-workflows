@@ -1,0 +1,5 @@
+FROM python
+# No dependencies; only python std lib
+
+ADD gro_box_vec_add_dist.py .
+ADD Dockerfile_gro_box_vec_add_dist .

@@ -21,6 +21,7 @@ jobs:
         dockerfile: [align_protein_ca_mda, align_protein_ca_pymol, atomselect,
                      autodock_vina, autodock_vina_filter, bash_scripts,
                      calculate_net_charge, generate_conformers,
+                     gro_box_vec_add_dist,
                      mol2_to_pdbqt, nmr4md, openbabel,
                      remove_terminal_residue_name_prefixes,
                      rename_residues_mol, combine_structure,
