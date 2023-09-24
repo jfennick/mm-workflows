@@ -1,0 +1,18 @@
+steps:
+- array_float:
+    in:
+      minval: 3.0
+      maxval: 4.0
+      step: 0.1
+      decimal_places: 1
+      array: '&array'
+- water_min.yml:
+    scatter: [box_size]
+    in:
+      box_size: '*array'
+
+wic:
+  steps:
+    (2, water_min.yml):
+      wic:
+        inlineable: False

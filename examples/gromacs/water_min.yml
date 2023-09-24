@@ -1,0 +1,23 @@
+inputs:
+  box_size:
+    type: float
+
+steps:
+- gmx_solvate:
+    in:
+      box: ~box_size
+#      scale: 1.0
+      output_gro_path: '&system.gro'
+# - gro_box_vec_add_dist:
+#     in:
+#       input_box_vec_dist: 0.001
+#       output_gro_path: '&system.gro'
+- pdb2gmx:
+    in:
+      input_pdb_path: '*system.gro'
+      output_crd_path: '&complex_vac.pdb'
+      output_top_zip_path: '&complex_vac.zip'
+      config:
+        water_type: tip3p
+        force_field: oplsaa
+- min.yml:

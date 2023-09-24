@@ -11,6 +11,8 @@ doc: |-
 baseCommand: /gromacs/bin/gmx
 arguments: ["mdrun"]
 
+successCodes: [0,1]  # Allow failures to "succeed"
+
 hints:
   cwltool:CUDARequirement:
     cudaVersionMin: "11.8"  # 11.8 for gromacs 2023, 11.4 otherwise
@@ -231,7 +233,7 @@ outputs:
     label: Path to the GROMACS uncompressed raw trajectory file TRR
     doc: |-
       Path to the GROMACS uncompressed raw trajectory file TRR
-    type: File
+    type: File?  # Optional to allow for failures
     outputBinding:
       glob: $(inputs.output_trr_path)
     format: edam:format_3910
@@ -240,7 +242,7 @@ outputs:
     label: Path to the output GROMACS structure GRO file
     doc: |-
       Path to the output GROMACS structure GRO file
-    type: File
+    type: File?  # Optional to allow for failures
     outputBinding:
       glob: $(inputs.output_crd_path)
     format: edam:format_2033
@@ -249,7 +251,7 @@ outputs:
     label: Path to the output GROMACS portable energy file EDR
     doc: |-
       Path to the output GROMACS portable energy file EDR
-    type: File
+    type: File?  # Optional to allow for failures
     outputBinding:
       glob: $(inputs.output_edr_path)
     format: edam:format_2330

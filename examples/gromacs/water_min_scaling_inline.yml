@@ -1,0 +1,106 @@
+steps:
+- array_float:
+    in:
+      minval: 3.0
+      maxval: 4.0
+      step: 0.1
+      decimal_places: 1
+      array: '&array'
+- gmx_solvate:
+    scatter: [box]
+    in:
+      box: '*array'
+#      scale: 1.0
+      output_gro_path: '&system.gro'
+# - gro_box_vec_add_dist:
+#     scatter: [input_gro_path]
+#     in:
+#       input_box_vec_dist: 0.001
+#       output_gro_path: '&system.gro'
+- pdb2gmx:
+    scatter: [input_pdb_path]
+    in:
+      input_pdb_path: '*system.gro'
+      output_crd_path: '&complex_vac.pdb'
+      output_top_zip_path: '&complex_vac.zip'
+      config:
+        water_type: tip3p
+        force_field: oplsaa
+        ignh: True
+        merge: False
+- grompp:
+    scatter: [input_crd_path, input_top_zip_path]
+    scatterMethod: dotproduct
+    in:
+      config:
+        mdp:
+          integrator: steep
+          rvdw: 1.4
+          rcoulomb: 1.4
+          #coulombtype: PME
+          nsteps: 1000
+          emstep: 0.0001
+          emtol: 100
+          nstxout: 100
+          nstenergy: 1
+- mdrun:
+    scatter: [input_tpr_path]
+    in:
+      nb_terms: cpu  # NOTE: Workaround for a bug in gromacs 2022.2, fixed in 2022.3
+      # https://manual.gromacs.org/current/release-notes/2022/2022.3.html#energy-minimization-would-not-converge-with-gpu-and-without-dd
+      bonded_terms: cpu # GPU implementation IS supported for md integrator, is NOT supported for sd integrator, etc.
+      pme_terms: cpu
+      output_edr_path: '&energy_sd.edr'
+- gmx_energy:
+    scatter: [input_energy_path]
+    in:
+      input_energy_path: '*energy_sd.edr'
+      config:
+        terms: [Potential]
+      output_xvg_path: 'energy_min_steep.xvg'
+- grompp:
+    scatter: [input_crd_path, input_top_zip_path]
+    scatterMethod: dotproduct
+    in:
+      config:
+        mdp:
+          integrator: cg
+          define: -DFLEXIBLE # Defines a flexible water model if it exists in the system
+          # https://manual.gromacs.org/current/reference-manual/algorithms/energy-minimization.html#conjugate-gradient
+          rvdw: 1.4
+          rcoulomb: 1.4
+          #coulombtype: PME
+          nsteps: 1000
+          emstep: 0.01
+          emtol: 10
+          nstxout: 100
+          nstenergy: 1
+# This step may fail
+- mdrun:
+    scatter: [input_tpr_path]
+    in:
+      nb_terms: cpu  # NOTE: Workaround for a bug in gromacs 2022.2, fixed in 2022.3
+      # https://manual.gromacs.org/current/release-notes/2022/2022.3.html#energy-minimization-would-not-converge-with-gpu-and-without-dd
+      bonded_terms: cpu # GPU implementation IS supported for md integrator, is NOT supported for sd integrator, etc.
+      pme_terms: cpu
+      output_edr_path: '&energy_cg.edr'
+# So we need to guard *every single step* afterwards...
+# See https://www.commonwl.org/v1.2/Workflow.html#Conditional_execution_(Optional)
+# and https://cwl.discourse.group/t/how-to-exit-the-workflow-if-conditions-met/583
+- gmx_energy:
+    # when: $(inputs.input_energy_path != null)  # requires CWL 1.2
+    scatter: [input_energy_path]
+    in:
+      input_energy_path: '*energy_cg.edr'
+      config:
+        terms: [Potential]
+      output_xvg_path: 'energy_min_cg.xvg'
+
+wic:
+  steps:
+    (5, mdrun):
+      wic:
+        namespace: gpu
+    (8, mdrun):
+      wic:
+        namespace: gpu
